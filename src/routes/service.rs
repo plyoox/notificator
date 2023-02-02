@@ -13,7 +13,7 @@ async fn create_notification(state: web::Data<AppState>, payload: Query<TwitchCo
 
     let mut transaction = state.db.begin().await?;
 
-    let res = sqlx::query(
+    let pg_res = sqlx::query(
         "INSERT INTO twitch_users (id, username, avatar, eventsub_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET username = $2, avatar = $3 RETURNING eventsub_id"
     )
         .bind(user.id)
@@ -22,23 +22,22 @@ async fn create_notification(state: web::Data<AppState>, payload: Query<TwitchCo
         .fetch_one(&mut transaction)
         .await?;
 
-    let id = match res.try_get::<Option<String>, &str>("eventsub").unwrap() {
-        Some(id) => id,
-        None => {
-            state.register_eventsub(&token, user.id).await?
-        }
+    if pg_res.try_get::<Option<String>, &str>("eventsub").unwrap().is_none() {
+        state.register_eventsub(&token, user.id).await?;
     };
 
-    sqlx::query("INSERT INTO twitch_notifications (guild_id, user_id) VALUES ($1, $2)")
+    let pg_res = sqlx::query("INSERT INTO twitch_notifications (guild_id, user_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING id")
         .bind(payload.guild_id)
         .bind(user.id)
-        .execute(&mut transaction)
+        .fetch_one(&mut transaction)
         .await?;
 
     transaction.commit().await?;
 
+    let notification_id = pg_res.get::<i32, &str>("id").to_string();
+
     Ok(
-        HttpResponse::Ok().body(id)
+        HttpResponse::Ok().body(notification_id)
     )
 }
 
