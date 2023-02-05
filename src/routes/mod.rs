@@ -93,7 +93,7 @@ impl AppState {
                 Err(Error::TwitchApi("Invalid authorization used".to_string()))
             }
             c => {
-                error!(target: "Twitch API", "Received unknown status code: {c}");
+                error!(target: "twitch", "Received unknown status code: {c}");
                 Err(Error::TwitchApi("Received unknown status code".to_string()))
             }
         }
@@ -123,7 +123,7 @@ impl AppState {
             c => {
                 let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
 
-                error!(target: "Twitch API", "POST {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "POST {} resulted in {c}: {}", url.as_str(), res_data.message);
                 Err(Error::InternalServer("An error occurred while fetching an eventsub".to_string()))
             }
         }
@@ -155,7 +155,7 @@ impl AppState {
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
 
-                error!(target: "Twitch API", "GET {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "GET {} resulted in {c}: {}", url.as_str(), res_data.message);
                 Err(Error::InternalServer("An error occurred while fetching an eventsub".to_string()))
             }
         }
@@ -194,14 +194,14 @@ impl AppState {
                 if let Some(s) = subscription {
                     Ok(s.id)
                 } else {
-                    error!(target: "Twitch API", "Cannot find existing eventsub for user {user_id}");
+                    error!(target: "twitch", "Cannot find existing eventsub for user {user_id}");
                     Err(Error::TwitchApi("Cannot find existing eventsub for user".to_string()))
                 }
             }
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
 
-                error!(target: "Twitch API", "POST {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "POST {} resulted in {c}: {}", url.as_str(), res_data.message);
                 Err(Error::InternalServer("An error occurred while registering an eventsub".to_string()))
             }
         }
@@ -224,7 +224,7 @@ impl AppState {
             }
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
-                error!(target: "Twitch API", "DELETE {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "DELETE {} resulted in {c}: {}", url.as_str(), res_data.message);
 
                 Err(Error::InternalServer("An error occurred while deleting an eventsub.".to_string()))
             }
@@ -254,7 +254,7 @@ impl AppState {
             }
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
-                error!(target: "Twitch API", "GET {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "GET {} resulted in {c}: {}", url.as_str(), res_data.message);
 
                 Err(Error::InternalServer("An error occurred while fetching a stream.".to_string()))
             }
@@ -297,7 +297,7 @@ impl ResponseError for Error {
                 })
             }
             Error::SQLx(e) => {
-                error!(target: "Database", "An error occurred while executing a database query: {e}");
+                error!(target: "database", "An error occurred while executing a database query: {e}");
 
                 HttpResponse::InternalServerError().json(ErrorResponse {
                     code: StatusCode::INTERNAL_SERVER_ERROR,
