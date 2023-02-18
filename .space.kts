@@ -12,7 +12,7 @@ job("Build and push Docker") {
             file = "Dockerfile"
             labels["vendor"] = "Plyoox"
 
-            val spaceRepo = "plyoox.registry.jetbrains.space/p/plyoox/plyoox/$spaceRepo"
+            val spaceRepo = "plyoox.registry.jetbrains.space/p/plyoox/plyoox/notificator"
             // image tags for 'docker push'
             tags {
                 +"$spaceRepo:latest"
