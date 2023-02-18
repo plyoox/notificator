@@ -1,16 +1,16 @@
-FROM rust:1.67 as builder
+FROM rust:1.67-slim as builder
 
 WORKDIR /usr/builder
 
 COPY src ./src
 COPY Cargo.toml Cargo.lock ./
 
-RUN cargo install --path . --locked
+RUN cargo build --release
 
-FROM scratch
+FROM debian:bullseye-slim
 
 WORKDIR /usr/app
 
-COPY --from=builder /usr/builder/target/release/notificator ./notificator
+COPY --from=builder /usr/builder/target/release/notificator ./app
 
-CMD ["./notificator"]
+CMD ["./app"]
