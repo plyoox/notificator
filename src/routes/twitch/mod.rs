@@ -84,7 +84,7 @@ impl AppState {
         let url = format!("{TWITCH_API_ENDPOINT}/users");
         let mut res = self
             .client
-            .post(url.as_str())
+            .get(url.as_str())
             .bearer_auth(token)
             .insert_header(("Client-Id", self.twitch.client_id))
             .send()
@@ -101,7 +101,7 @@ impl AppState {
             401 => Err(Error::TwitchApi("Invalid authorization used".to_string())),
             c => {
                 let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
-                error!(target: "twitch", "POST {url} resulted in {c}: {res_data:?}");
+                error!(target: "twitch", "GET {url} resulted in {c}: {res_data:?}");
 
                 Err(Error::TwitchApi("Received unhandled status code".to_string()))
             }
