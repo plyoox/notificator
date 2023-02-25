@@ -37,7 +37,7 @@ async fn create_notification(
         let eventsub_id = state.register_eventsub(user.id).await?;
         // Conflict should only happen when manually deleting an user
         sqlx::query(
-            "INSERT INTO twitch_users (id, username, avatar, eventsub_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO UPDATE SET username = $2, avatar = $3, eventsub_id = $4",
+            "INSERT INTO twitch_users (id, username, avatar, eventsub_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET username = $2, avatar = $3, eventsub_id = $4",
         )
         .bind(user.id)
         .bind(user.display_name.as_str())
