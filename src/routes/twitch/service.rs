@@ -16,12 +16,17 @@ async fn create_notification(
 
     let mut transaction = state.db.begin().await?;
 
-    let pg_res = sqlx::query("SELECT eventsub_id FROM twitch_users WHERE id = $1")
+    let pg_res = sqlx::query(
+        "SELECT tn.id FROM twitch_users tu INNER JOIN twitch_notifications tn on tu.id = tn.user_id WHERE tu.id = $1 AND tn.guild_id = $2"
+    )
         .bind(user.id)
+        .bind(payload.guild_id)
         .fetch_optional(&mut transaction)
         .await?;
 
-    if pg_res.is_none() {
+    if let Some(r) = pg_res {
+        return Ok(HttpResponse::Ok().body(r.get::<i32, &str>("id").to_string()));
+    } else {
         let eventsub_id = state.register_eventsub(user.id).await?;
         sqlx::query(
             "INSERT INTO twitch_users (id, username, avatar, eventsub_id) VALUES ($1, $2, $3, $4)",
