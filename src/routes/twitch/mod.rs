@@ -19,7 +19,6 @@ use self::structs::{
 };
 
 pub mod auth;
-pub mod notifications;
 pub mod service;
 pub mod structs;
 

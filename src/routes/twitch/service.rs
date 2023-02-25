@@ -3,7 +3,6 @@ use actix_web::{delete, post, web, HttpResponse};
 use sqlx::Row;
 
 use crate::errors::Error;
-// use self::
 use crate::structs::{AppState, Result};
 
 use super::structs::TwitchCodePayload;
