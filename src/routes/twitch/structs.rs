@@ -1,8 +1,8 @@
 use std::fmt::Display;
 use std::str::FromStr;
 
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::ser::SerializeStruct;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use validator::Validate;
 
 use crate::structs::ErrorResponse;
@@ -98,7 +98,6 @@ pub enum EventsubStatus {
 pub struct EventsubCondition {
     pub broadcaster_user_id: String,
 }
-
 
 #[derive(Deserialize, Serialize, Clone)]
 pub struct EventsubTransportData {
@@ -251,6 +250,11 @@ pub struct TwitchStreamsResponse {
     pub data: Vec<StreamData>,
 }
 
+#[derive(Deserialize)]
+pub struct StatePayload {
+    pub state: String,
+}
+
 impl TwitchSubscriptionStatus {
     pub fn as_str(&self) -> &'static str {
         match self {
@@ -264,8 +268,8 @@ impl TwitchSubscriptionStatus {
 
 impl Serialize for ErrorResponse {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
+    where
+        S: Serializer,
     {
         let mut state = serializer.serialize_struct("ErrorResponse", 3)?;
 
@@ -276,9 +280,10 @@ impl Serialize for ErrorResponse {
 }
 
 fn str_to_int<'de, T, D>(deserializer: D) -> Result<T, D::Error>
-    where T: FromStr,
-          T::Err: Display,
-          D: Deserializer<'de>
+where
+    T: FromStr,
+    T::Err: Display,
+    D: Deserializer<'de>,
 {
     let s = String::deserialize(deserializer)?;
     T::from_str(&s).map_err(serde::de::Error::custom)

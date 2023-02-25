@@ -6,20 +6,47 @@ use log::{error, warn};
 use sha2::Sha256;
 
 use crate::errors::Error;
-use crate::routes::structs::{EventsubRevocationPayload, TwitchChallengePayload, TwitchNotificationPayload, TwitchSubscriptionStatus};
 use crate::structs::{AppState, ErrorResponse, Result};
 
+use super::structs::{
+    EventsubRevocationPayload, TwitchChallengePayload, TwitchNotificationPayload,
+    TwitchSubscriptionStatus,
+};
+
 #[post("twitch")]
-async fn handle_eventsub(request: HttpRequest, state: web::Data<AppState>, body: web::Bytes) -> Result<HttpResponse> {
+async fn handle_eventsub(
+    request: HttpRequest,
+    state: web::Data<AppState>,
+    body: web::Bytes,
+) -> Result<HttpResponse> {
     let headers = request.headers();
 
-    let message_id = headers.get("twitch-eventsub-message-id").unwrap().to_str().unwrap();
-    let message_signature = headers.get("twitch-eventsub-message-signature").unwrap().to_str().unwrap();
-    let message_timestamp = headers.get("twitch-eventsub-message-timestamp").unwrap().to_str().unwrap();
-    let message_type = headers.get("twitch-eventsub-message-type").unwrap().to_str().unwrap();
+    let message_id = headers
+        .get("twitch-eventsub-message-id")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    let message_signature = headers
+        .get("twitch-eventsub-message-signature")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    let message_timestamp = headers
+        .get("twitch-eventsub-message-timestamp")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    let message_type = headers
+        .get("twitch-eventsub-message-type")
+        .unwrap()
+        .to_str()
+        .unwrap();
 
     if message_signature.len() < 10 {
-        error!("Received invalid signature from request: {}", message_signature.len());
+        error!(
+            "Received invalid signature from request: {}",
+            message_signature.len()
+        );
 
         return Err(Error::BadRequest("Invalid signature received.".to_string()));
     }
@@ -29,7 +56,9 @@ async fn handle_eventsub(request: HttpRequest, state: web::Data<AppState>, body:
     if body_bytes.is_err() {
         error!("Could not decode body of eventsub.");
 
-        return Err(Error::InternalServer("Could not decode body of eventsub.".to_string()));
+        return Err(Error::InternalServer(
+            "Could not decode body of eventsub.".to_string(),
+        ));
     }
 
     let body_str = body_bytes.unwrap().as_str().to_string();
@@ -40,23 +69,21 @@ async fn handle_eventsub(request: HttpRequest, state: web::Data<AppState>, body:
 
     let decoded_signature = hex::decode(shorted_signature).unwrap();
     if mac.verify_slice(&decoded_signature).is_err() {
-        return Ok(
-            HttpResponse::Unauthorized().json(ErrorResponse {
-                code: StatusCode::UNAUTHORIZED,
-                message: "Invalid signature provided.".to_string(),
-            })
-        );
+        return Ok(HttpResponse::Unauthorized().json(ErrorResponse {
+            code: StatusCode::UNAUTHORIZED,
+            message: "Invalid signature provided.".to_string(),
+        }));
     }
 
     if message_type == TwitchSubscriptionStatus::WebhookCallbackVerification.as_str() {
         let data = serde_json::from_str::<TwitchChallengePayload>(body_str.as_str())?;
 
-        return Ok(
-            HttpResponse::Ok().body(data.challenge)
-        );
+        return Ok(HttpResponse::Ok().body(data.challenge));
     } else if message_type == TwitchSubscriptionStatus::Notification.as_str() {
         let data = serde_json::from_str::<TwitchNotificationPayload>(body_str.as_str())?;
-        let stream_data = state.fetch_stream_data(data.event.broadcaster_user_id).await?;
+        let stream_data = state
+            .fetch_stream_data(data.event.broadcaster_user_id)
+            .await?;
 
         let bot_url = format!(
             "{}?user_id={}&user_name={}&game_name={}&viewer_count={}&started_at={}&thumbnail_url={}&title={}",
@@ -79,26 +106,22 @@ async fn handle_eventsub(request: HttpRequest, state: web::Data<AppState>, body:
             .await?;
     }
 
-    Ok(
-        HttpResponse::Ok().finish()
-    )
+    Ok(HttpResponse::Ok().finish())
 }
 
 fn route_guard(ctx: &GuardContext) -> bool {
     let h = ctx.head().headers();
 
-    h.contains_key("twitch-eventsub-message-id") &&
-        h.contains_key("twitch-eventsub-message-signature") &&
-        h.contains_key("twitch-eventsub-message-timestamp") &&
-        h.contains_key("twitch-eventsub-message-type")
+    h.contains_key("twitch-eventsub-message-id")
+        && h.contains_key("twitch-eventsub-message-signature")
+        && h.contains_key("twitch-eventsub-message-timestamp")
+        && h.contains_key("twitch-eventsub-message-type")
 }
 
-
 pub fn init_twitch_routes(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(
-            web::scope("_notify")
-                .guard(guard::fn_guard(route_guard))
-                .service(handle_eventsub)
-        );
+    cfg.service(
+        web::scope("_notify")
+            .guard(guard::fn_guard(route_guard))
+            .service(handle_eventsub),
+    );
 }

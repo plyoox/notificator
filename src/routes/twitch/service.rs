@@ -1,13 +1,18 @@
-use actix_web::{delete, HttpResponse, post, web};
 use actix_web::web::Query;
+use actix_web::{delete, post, web, HttpResponse};
 use sqlx::Row;
-use crate::errors::Error;
 
-use crate::routes::structs::TwitchCodePayload;
+use crate::errors::Error;
+// use self::
 use crate::structs::{AppState, Result};
 
+use super::structs::TwitchCodePayload;
+
 #[post("/")]
-async fn create_notification(state: web::Data<AppState>, payload: Query<TwitchCodePayload>) -> Result<HttpResponse> {
+async fn create_notification(
+    state: web::Data<AppState>,
+    payload: Query<TwitchCodePayload>,
+) -> Result<HttpResponse> {
     let token = state.fetch_user_token(payload.code.as_str()).await?;
     let user = state.fetch_user(token.as_str()).await?;
 
@@ -22,7 +27,11 @@ async fn create_notification(state: web::Data<AppState>, payload: Query<TwitchCo
         .fetch_one(&mut transaction)
         .await?;
 
-    if pg_res.try_get::<Option<String>, &str>("eventsub").unwrap().is_none() {
+    if pg_res
+        .try_get::<Option<String>, &str>("eventsub")
+        .unwrap()
+        .is_none()
+    {
         state.register_eventsub(&token, user.id).await?;
     };
 
@@ -36,13 +45,14 @@ async fn create_notification(state: web::Data<AppState>, payload: Query<TwitchCo
 
     let notification_id = pg_res.get::<i32, &str>("id").to_string();
 
-    Ok(
-        HttpResponse::Ok().body(notification_id)
-    )
+    Ok(HttpResponse::Ok().body(notification_id))
 }
 
 #[delete("{id}")]
-async fn delete_notification(state: web::Data<AppState>, query: web::Path<i32>) -> Result<HttpResponse> {
+async fn delete_notification(
+    state: web::Data<AppState>,
+    query: web::Path<i32>,
+) -> Result<HttpResponse> {
     let res = sqlx::query(
         "SELECT tu.eventsub_id, tn.user_id FROM twitch_users tu INNER JOIN twitch_notifications tn on tu.id = tn.user_id WHERE tn.id = $1"
     )
@@ -51,7 +61,9 @@ async fn delete_notification(state: web::Data<AppState>, query: web::Path<i32>) 
         .await?;
 
     if res.is_empty() {
-        return Err(Error::BadRequest("Could not find twitch notification.".to_string()));
+        return Err(Error::BadRequest(
+            "Could not find twitch notification.".to_string(),
+        ));
     }
 
     let eventsub_id = res.get::<String, &str>("eventsub_id");
@@ -68,7 +80,10 @@ async fn delete_notification(state: web::Data<AppState>, query: web::Path<i32>) 
 }
 
 #[delete("guild/{id}")]
-async fn delete_guild_notifications(state: web::Data<AppState>, query: web::Path<i64>) -> Result<HttpResponse> {
+async fn delete_guild_notifications(
+    state: web::Data<AppState>,
+    query: web::Path<i64>,
+) -> Result<HttpResponse> {
     let mut transaction = state.db.begin().await?;
 
     sqlx::query("DELETE FROM twitch_notifications WHERE guild_id = $1")
@@ -82,7 +97,7 @@ async fn delete_guild_notifications(state: web::Data<AppState>, query: web::Path
         .await?;
 
     for row in unused_users {
-        let eventsub_id =  row.get::<String, &str>("eventsub_id");
+        let eventsub_id = row.get::<String, &str>("eventsub_id");
         state.delete_eventsub(eventsub_id.as_str()).await?;
     }
 
@@ -92,11 +107,10 @@ async fn delete_guild_notifications(state: web::Data<AppState>, query: web::Path
 }
 
 pub fn init_service_routes(cfg: &mut web::ServiceConfig) {
-    cfg
-        .service(
-            web::scope("service/twitch/notifications")
-                .service(create_notification)
-                .service(delete_notification)
-                .service(delete_guild_notifications)
-        );
+    cfg.service(
+        web::scope("service/twitch/notifications")
+            .service(create_notification)
+            .service(delete_notification)
+            .service(delete_guild_notifications),
+    );
 }

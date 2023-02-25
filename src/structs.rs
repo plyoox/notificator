@@ -1,6 +1,8 @@
 use std::sync::Mutex;
+
 use actix_web::http::StatusCode;
 use sqlx::PgPool;
+
 use crate::errors::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;

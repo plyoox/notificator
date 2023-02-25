@@ -4,13 +4,18 @@ use actix_web::middleware::ErrorHandlerResponse;
 
 use crate::structs::ErrorResponse;
 
-pub fn not_found_handler<B>(mut res: ServiceResponse<B>) -> actix_web::Result<ErrorHandlerResponse<B>> {
+pub fn not_found_handler<B>(
+    mut res: ServiceResponse<B>,
+) -> actix_web::Result<ErrorHandlerResponse<B>> {
     let response_struct = ErrorResponse {
         code: StatusCode::NOT_FOUND,
         message: "Cannot find this path or this method".to_string(),
     };
 
-    res.headers_mut().insert(header::CONTENT_TYPE, header::HeaderValue::from_static("application/json"));
+    res.headers_mut().insert(
+        header::CONTENT_TYPE,
+        header::HeaderValue::from_static("application/json"),
+    );
 
     let (req, res) = res.into_parts();
     let res = res.set_body(serde_json::to_string(&response_struct).unwrap());
