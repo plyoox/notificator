@@ -35,8 +35,9 @@ async fn create_notification(
         return Err(Error::Conflict);
     } else {
         let eventsub_id = state.register_eventsub(user.id).await?;
+        // Conflict should only happen when manually deleting an user
         sqlx::query(
-            "INSERT INTO twitch_users (id, username, avatar, eventsub_id) VALUES ($1, $2, $3, $4)",
+            "INSERT INTO twitch_users (id, username, avatar, eventsub_id) VALUES ($1, $2, $3, $4) ON CONFLICT DO UPDATE SET username = $2, avatar = $3, eventsub_id = $4",
         )
         .bind(user.id)
         .bind(user.display_name.as_str())
@@ -117,7 +118,7 @@ async fn delete_guild_notifications(
         .execute(&mut transaction)
         .await?;
 
-    // delete all unused eventsubs
+    // delete all unused eventsubs, this also cleans up some lost entries
     let unused_users = sqlx::query("DELETE FROM twitch_users WHERE (SELECT count(*) FROM twitch_notifications) = 0 RETURNING eventsub_id")
         .fetch_all(&mut transaction)
         .await?;
