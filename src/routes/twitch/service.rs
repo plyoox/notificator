@@ -30,7 +30,7 @@ async fn create_notification(
         .bind(user.display_name.as_str())
         .bind(user.profile_image_url.as_str())
         .bind(eventsub_id.as_str())
-        .fetch_one(&mut transaction)
+        .execute(&mut transaction)
         .await?;
     };
 
