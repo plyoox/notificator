@@ -169,7 +169,9 @@ impl AppState {
         }
     }
 
-    pub async fn register_eventsub(&self, token: &str, user_id: i32) -> Result<String> {
+    pub async fn register_eventsub(&self, user_id: i32) -> Result<String> {
+        let token = self.get_access_token().await?;
+
         let body = CreateTwitchEventsub {
             event_type: EventsubType::StreamOnline,
             version: "1".to_string(),

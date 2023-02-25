@@ -22,7 +22,7 @@ async fn create_notification(
         .await?;
 
     if pg_res.is_none() {
-        let eventsub_id = state.register_eventsub(&token, user.id).await?;
+        let eventsub_id = state.register_eventsub(user.id).await?;
         sqlx::query(
             "INSERT INTO twitch_users (id, username, avatar, eventsub_id) VALUES ($1, $2, $3, $4)",
         )
