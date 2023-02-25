@@ -127,7 +127,7 @@ pub struct TokenExchangeResponse {
     pub token_type: String,
     pub expires_in: i32,
     pub refresh_token: String,
-    pub scope: String,
+    // pub scope: String,
 }
 
 #[derive(Deserialize)]
