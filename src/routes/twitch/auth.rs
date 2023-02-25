@@ -3,7 +3,7 @@ use actix_web::{get, web};
 use crate::routes::twitch::structs::StatePayload;
 use crate::structs::AppState;
 
-#[get("/")]
+#[get("")]
 async fn login_url(state: web::Data<AppState>, req_state: web::Query<StatePayload>) -> String {
     format!(
         "https://id.twitch.tv/oauth2/authorize?response_type=code&client_id={}&redirect_uri={}&scope=user:read:email&state={}",

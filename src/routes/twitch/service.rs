@@ -7,7 +7,7 @@ use crate::structs::{AppState, Result};
 
 use super::structs::TwitchCodePayload;
 
-#[post("/")]
+#[post("")]
 async fn create_notification(
     state: web::Data<AppState>,
     payload: Query<TwitchCodePayload>,
