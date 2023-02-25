@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Error building a connection pool");
 
-    let env = env_logger::Env::default().filter_or("MY_LOG_LEVEL", "INFO");
+    let env = env_logger::Env::default().default_filter_or("INFO").default_write_style_or("always");
     env_logger::init_from_env(env);
 
     info!("Starting webserver...");
