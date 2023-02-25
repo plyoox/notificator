@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use actix_web::body::BoxBody;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
-use log::error;
+use log::{error, warn};
 
 use crate::errors::Error;
 use crate::structs::{AppState, ErrorResponse, Result};
@@ -237,6 +237,11 @@ impl AppState {
 
         match res.status().as_u16() {
             204 => Ok(()),
+            404 => {
+                warn!(target: "twitch", "Eventsub with {id} not found");
+
+                Ok(())
+            }
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
                 error!(target: "twitch", "DELETE {} resulted in {c}: {}", url.as_str(), res_data.message);

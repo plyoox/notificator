@@ -8,7 +8,7 @@ use sha2::Sha256;
 use crate::errors::Error;
 use crate::structs::{AppState, ErrorResponse, Result};
 
-use super::structs::{
+use super::twitch::structs::{
     EventsubRevocationPayload, TwitchChallengePayload, TwitchNotificationPayload,
     TwitchSubscriptionStatus,
 };
