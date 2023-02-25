@@ -167,7 +167,7 @@ impl AppState {
             version: "1".to_string(),
             condition: EventsubCondition { broadcaster_user_id: user_id.to_string() },
             transport: EventsubTransportData {
-                callback: self.twitch.redirect_url.to_owned(),
+                callback: self.twitch.callback_url.to_owned(),
                 secret: Some(self.twitch.eventsub_secret.to_owned()),
                 method: "webhook".to_owned(),
             },

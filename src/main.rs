@@ -56,7 +56,7 @@ async fn main() -> std::io::Result<()> {
                         twitch: TwitchState {
                             client_secret: CLIENT_SECRET.as_str(),
                             client_id: CLIENT_ID.as_str(),
-                            redirect_url: "",
+                            redirect_url: REDIRECT_URL.as_str(),
                             callback_url: CALLBACK_URL.as_str(),
                             eventsub_secret: EVENTSUB_SECRET.as_str(),
                             app_token: Mutex::new(TwitchAccessToken {
