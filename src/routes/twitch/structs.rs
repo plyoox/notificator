@@ -117,6 +117,7 @@ pub struct AppAccessTokenResponse {
 pub struct TwitchCodePayload {
     #[validate(length(min = 28, max = 28))]
     pub code: String,
+    #[serde(deserialize_with = "str_to_int")]
     pub guild_id: i64,
 }
 
