@@ -28,16 +28,16 @@ impl ResponseError for Error {
                 code: StatusCode::BAD_REQUEST,
                 message: e.to_string(),
             }),
-            Error::Conflict => HttpResponse::BadRequest().json(ErrorResponse {
+            Error::Conflict => HttpResponse::Conflict().json(ErrorResponse {
                 code: StatusCode::CONFLICT,
                 message: self.to_string(),
             }),
-            Error::Twitch(_) => HttpResponse::BadRequest().json(ErrorResponse {
-                code: StatusCode::CONFLICT,
+            Error::Twitch(_) => HttpResponse::ServiceUnavailable().json(ErrorResponse {
+                code: StatusCode::SERVICE_UNAVAILABLE,
                 message: self.to_string(),
             }),
             _ => HttpResponse::InternalServerError().json(ErrorResponse {
-                code: self.status_code(),
+                code: StatusCode::INTERNAL_SERVER_ERROR,
                 message: self.to_string(),
             }),
         }
