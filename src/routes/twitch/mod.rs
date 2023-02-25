@@ -81,9 +81,10 @@ impl AppState {
     }
 
     pub async fn fetch_user(&self, token: &str) -> Result<TwitchUser> {
+        let url = format!("{TWITCH_API_ENDPOINT}/users");
         let mut res = self
             .client
-            .post(format!("{TWITCH_API_ENDPOINT}/users"))
+            .post(url.as_str())
             .bearer_auth(token)
             .insert_header(("Client-Id", self.twitch.client_id))
             .send()
@@ -103,7 +104,9 @@ impl AppState {
             )),
             401 => Err(Error::TwitchApi("Invalid authorization used".to_string())),
             c => {
-                error!(target: "twitch", "Received unknown status code: {c}");
+                let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
+
+                error!(target: "twitch", "POST {url} resulted in  {c}: {}", res_data.message);
                 Err(Error::TwitchApi("Received unknown status code".to_string()))
             }
         }
