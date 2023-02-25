@@ -1,4 +1,3 @@
-use actix_web::web::Query;
 use actix_web::{delete, post, web, HttpResponse};
 use sqlx::Row;
 
@@ -10,7 +9,7 @@ use super::structs::TwitchCodePayload;
 #[post("")]
 async fn create_notification(
     state: web::Data<AppState>,
-    payload: Query<TwitchCodePayload>,
+    payload: web::Json<TwitchCodePayload>,
 ) -> Result<HttpResponse> {
     let token = state.fetch_user_token(payload.code.as_str()).await?;
     let user = state.fetch_user(token.as_str()).await?;
