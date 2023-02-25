@@ -101,7 +101,7 @@ impl AppState {
             401 => Err(Error::TwitchApi("Invalid authorization used".to_string())),
             c => {
                 let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
-                error!(target: "twitch", "POST {url} resulted in {c}: {}", res_data.message);
+                error!(target: "twitch", "POST {url} resulted in {c}: {res_data:?}");
 
                 Err(Error::TwitchApi("Received unhandled status code".to_string()))
             }
@@ -127,7 +127,7 @@ impl AppState {
             }
             c => {
                 let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
-                error!(target: "twitch", "POST {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "POST {} resulted in {c}: {res_data:?}", url.as_str());
 
                 Err(Error::InternalServer(
                     "An error occurred while fetching an eventsub".to_string(),
@@ -160,7 +160,7 @@ impl AppState {
             }
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
-                error!(target: "twitch", "GET {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "GET {} resulted in {c}: {res_data:?}", url.as_str());
 
                 Err(Error::InternalServer(
                     "An error occurred while fetching an eventsub".to_string(),
@@ -214,7 +214,7 @@ impl AppState {
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
 
-                error!(target: "twitch", "POST {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "POST {} resulted in {c}: {res_data:?}", url.as_str());
                 Err(Error::InternalServer(
                     "An error occurred while registering an eventsub".to_string(),
                 ))
@@ -243,7 +243,7 @@ impl AppState {
             }
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
-                error!(target: "twitch", "DELETE {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "DELETE {} resulted in {c}: {res_data:?}", url.as_str());
 
                 Err(Error::InternalServer(
                     "An error occurred while deleting an eventsub.".to_string(),
@@ -276,7 +276,7 @@ impl AppState {
             }
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
-                error!(target: "twitch", "GET {} resulted in {c}: {}", url.as_str(), res_data.message);
+                error!(target: "twitch", "GET {} resulted in {c}: {res_data:?}", url.as_str());
 
                 Err(Error::InternalServer(
                     "An error occurred while fetching a stream.".to_string(),

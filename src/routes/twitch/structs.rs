@@ -151,14 +151,14 @@ pub struct TwitchUser {
     pub created_at: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct TwitchApiErrorResponse {
     pub error: String,
     pub status: i16,
     pub message: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct TwitchAuthErrorResponse {
     pub status: u16,
     pub message: String,
