@@ -1,12 +1,9 @@
 use std::collections::HashMap;
 
-use actix_web::body::BoxBody;
-use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError};
 use log::{error, warn};
 
 use crate::errors::Error;
-use crate::structs::{AppState, ErrorResponse, Result};
+use crate::structs::{AppState, Result};
 use crate::utils::current_unix_timestamp;
 
 use self::structs::{
@@ -42,11 +39,7 @@ impl AppState {
             200 => {
                 let body = res.json::<AppAccessTokenResponse>().await.unwrap();
 
-                let mut data = self
-                    .twitch
-                    .app_token
-                    .lock()
-                    .map_err(|_| Error::Mutex("Cannot lock context".to_string()))?;
+                let mut data = self.twitch.app_token.lock().map_err(|_| Error::Mutex)?;
 
                 data.access_token = body.access_token.clone();
                 data.expires_at = current_unix_timestamp() + body.expires_in as u64;
@@ -56,19 +49,15 @@ impl AppState {
             _ => {
                 let body = res.body().await.unwrap();
                 let text = String::from_utf8(body.to_vec())
-                    .map_err(|_| Error::TwitchApi("Received invalid utf8".to_string()))?;
-                Err(Error::TwitchApi(text))
+                    .map_err(|_| Error::Twitch("Received invalid utf8".to_string()))?;
+                Err(Error::Twitch(text))
             }
         }
     }
 
     async fn get_access_token(&self) -> Result<String> {
         let token = {
-            let token_mutex = self
-                .twitch
-                .app_token
-                .lock()
-                .map_err(|_| Error::Mutex("Cannot lock mutex".to_string()))?;
+            let token_mutex = self.twitch.app_token.lock().map_err(|_| Error::Mutex)?;
 
             token_mutex.clone()
         };
@@ -98,12 +87,14 @@ impl AppState {
             400 => Err(Error::InternalServer(
                 "Bad request while fetching users".to_string(),
             )),
-            401 => Err(Error::TwitchApi("Invalid authorization used".to_string())),
+            401 => Err(Error::Twitch("Invalid authorization used".to_string())),
             c => {
                 let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
                 error!(target: "twitch", "GET {url} resulted in {c}: {res_data:?}");
 
-                Err(Error::TwitchApi("Received unhandled status code".to_string()))
+                Err(Error::InternalServer(
+                    "Received unhandled status code".to_string(),
+                ))
             }
         }
     }
@@ -208,7 +199,7 @@ impl AppState {
                     Ok(s.id)
                 } else {
                     error!(target: "twitch", "Cannot find existing eventsub for user {user_id}");
-                    Err(Error::TwitchApi(
+                    Err(Error::Twitch(
                         "Cannot find existing eventsub for user".to_string(),
                     ))
                 }
@@ -248,7 +239,7 @@ impl AppState {
                 error!(target: "twitch", "DELETE {} resulted in {c}: {res_data:?}", url.as_str());
 
                 Err(Error::InternalServer(
-                    "An error occurred while deleting an eventsub.".to_string(),
+                    "Twitch response is not handled".to_string(),
                 ))
             }
         }
@@ -271,7 +262,7 @@ impl AppState {
                 let body = res.json::<TwitchStreamsResponse>().await.unwrap();
 
                 if body.data.is_empty() {
-                    Err(Error::TwitchApi("No stream data returned.".to_string()))
+                    Err(Error::Twitch("No stream data returned.".to_string()))
                 } else {
                     Ok(body.data[0].clone())
                 }
@@ -284,48 +275,6 @@ impl AppState {
                     "An error occurred while fetching a stream.".to_string(),
                 ))
             }
-        }
-    }
-}
-
-impl ResponseError for Error {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            Error::BadRequest(_) => StatusCode::BAD_REQUEST,
-            _ => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
-
-    fn error_response(&self) -> HttpResponse<BoxBody> {
-        match self {
-            Error::Awc(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-                code: StatusCode::INTERNAL_SERVER_ERROR,
-                message: format!("Request Error: {e}"),
-            }),
-            Error::TwitchApi(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-                code: StatusCode::INTERNAL_SERVER_ERROR,
-                message: format!("Twitch API Error: {e}"),
-            }),
-            Error::InternalServer(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-                code: StatusCode::INTERNAL_SERVER_ERROR,
-                message: e.to_string(),
-            }),
-            Error::Mutex(e) => HttpResponse::InternalServerError().json(ErrorResponse {
-                code: StatusCode::INTERNAL_SERVER_ERROR,
-                message: format!("Request Error: {e}"),
-            }),
-            Error::SQLx(e) => {
-                error!(target: "database", "An error occurred while executing a database query: {e}");
-
-                HttpResponse::InternalServerError().json(ErrorResponse {
-                    code: StatusCode::INTERNAL_SERVER_ERROR,
-                    message: "An error occurred while executing a database query".to_string(),
-                })
-            }
-            Error::BadRequest(e) => HttpResponse::BadRequest().json(ErrorResponse {
-                code: StatusCode::BAD_REQUEST,
-                message: e.to_string(),
-            }),
         }
     }
 }

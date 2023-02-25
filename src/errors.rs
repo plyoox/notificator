@@ -1,29 +1,35 @@
 use std::fmt::Debug;
 
-use awc::error::SendRequestError;
 use log::warn;
 
 #[derive(Debug, derive_more::Display)]
 pub enum Error {
-    Awc(String),
-    TwitchApi(String),
+    #[display(fmt = "Error sending http request {}", _0)]
+    Awc(awc::error::SendRequestError),
+    #[display(fmt = "Twitch API returned an error: {}", _0)]
+    Twitch(String),
+    #[display(fmt = "{}", _0)]
     InternalServer(String),
-    Mutex(String),
-    SQLx(String),
+    #[display(fmt = "Could not lock mutex")]
+    Mutex,
+    #[display(fmt = "Error executing database query: {:?}", _0)]
+    SQLx(sqlx::Error),
     BadRequest(String),
+    #[display(fmt = "Notification already exists")]
+    Conflict
 }
 
-impl From<SendRequestError> for Error {
-    fn from(value: SendRequestError) -> Self {
-        warn!("Error while sending web request: {value:?}");
-        Self::Awc(value.to_string())
+impl From<awc::error::SendRequestError> for Error {
+    fn from(value: awc::error::SendRequestError) -> Self {
+        warn!(target: "http", "Error sending http request: {value:?}");
+        Self::Awc(value)
     }
 }
 
 impl From<sqlx::Error> for Error {
     fn from(value: sqlx::Error) -> Self {
-        warn!("Error while executing database query: {value:?}");
-        Self::SQLx(value.to_string())
+        warn!(target: "sql", "Error executing database query: {value:?}");
+        Self::SQLx(value)
     }
 }
 
