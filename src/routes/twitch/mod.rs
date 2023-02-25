@@ -101,7 +101,7 @@ impl AppState {
             401 => Err(Error::TwitchApi("Invalid authorization used".to_string())),
             c => {
                 let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
-                error!(target: "twitch", "POST {url} resulted in  {c}: {}", res_data.message);
+                error!(target: "twitch", "POST {url} resulted in {c}: {}", res_data.message);
 
                 Err(Error::TwitchApi("Received unhandled status code".to_string()))
             }
