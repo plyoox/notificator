@@ -93,21 +93,17 @@ impl AppState {
         match res.status().as_u16() {
             200 => {
                 let res_data = res.json::<TwitchUserResponse>().await.unwrap();
-                if res_data.data.is_empty() {
-                    Err(Error::TwitchApi("Received empty user response".to_string()))
-                } else {
-                    Ok(res_data.data[0].clone())
-                }
+                Ok(res_data.data[0].clone())
             }
             400 => Err(Error::InternalServer(
-                "Invalid request when fetching users".to_string(),
+                "Bad request while fetching users".to_string(),
             )),
             401 => Err(Error::TwitchApi("Invalid authorization used".to_string())),
             c => {
                 let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
-
                 error!(target: "twitch", "POST {url} resulted in  {c}: {}", res_data.message);
-                Err(Error::TwitchApi("Received unknown status code".to_string()))
+
+                Err(Error::TwitchApi("Received unhandled status code".to_string()))
             }
         }
     }
@@ -131,8 +127,8 @@ impl AppState {
             }
             c => {
                 let res_data = res.json::<TwitchAuthErrorResponse>().await.unwrap();
-
                 error!(target: "twitch", "POST {} resulted in {c}: {}", url.as_str(), res_data.message);
+
                 Err(Error::InternalServer(
                     "An error occurred while fetching an eventsub".to_string(),
                 ))
@@ -164,8 +160,8 @@ impl AppState {
             }
             c => {
                 let res_data = res.json::<TwitchApiErrorResponse>().await.unwrap();
-
                 error!(target: "twitch", "GET {} resulted in {c}: {}", url.as_str(), res_data.message);
+
                 Err(Error::InternalServer(
                     "An error occurred while fetching an eventsub".to_string(),
                 ))
